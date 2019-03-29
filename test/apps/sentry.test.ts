@@ -1,4 +1,4 @@
-import Raven from 'raven'
+import * as Sentry from '@sentry/node'
 import { Application } from '../../src'
 import appFn = require('../../src/apps/sentry')
 import { createApp } from './helper'
@@ -20,7 +20,7 @@ describe('sentry app', () => {
       process.env.SENTRY_DSN = '1233'
       expect(() => {
         appFn(app)
-      }).toThrow(/Invalid Sentry DSN: 1233/)
+      }).toThrow(/Invalid Dsn/)
     })
   })
 
@@ -28,14 +28,14 @@ describe('sentry app', () => {
     beforeEach(() => {
       process.env.SENTRY_DSN = 'https://user:pw@sentry.io/123'
       appFn(app)
-      Raven.captureException = jest.fn()
+      Object.defineProperty(Sentry, 'captureException', { value: jest.fn() })
     })
 
     test('sends reported errors to sentry', () => {
       const err = new Error('test message')
       app.log.error(err)
 
-      expect(Raven.captureException).toHaveBeenCalledWith(err, expect.objectContaining({
+      expect(Sentry.captureException).toHaveBeenCalledWith(err, expect.objectContaining({
         extra: expect.anything()
       }))
     })
